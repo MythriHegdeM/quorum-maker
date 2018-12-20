@@ -1,9 +1,9 @@
-# Quorum Maker V2.4
+# Quorum Maker V2.6
 
 Synechron's Quorum Maker is a tool that allows users to create and manage Quorum network. Manually editing configuration files and creating nodes is a slow and error-prone process. Quorum Maker can create any number of nodes of various configurations dynamically with reduced user input. This provides a wizard-like interface with a series of questions to guide the user when creating nodes. Quorum Maker can create nodes to:
 
-- run with docker-compose (Raft consensus/Quorum 2.0.2) for easy use in development environments; or,
-- nodes to be distributed on separate Linux boxes or cloud instances for a production environment (Raft consensus/Quorum 2.0.2)
+- run with docker-compose (Raft consensus/Quorum 2.2.0) for easy use in development environments; or,
+- nodes to be distributed on separate Linux boxes or cloud instances for a production environment (Raft consensus/Quorum 2.2.0)
 
 ![Quorum Maker 2](img/QM2.png)
 
@@ -18,9 +18,9 @@ Synechron's Quorum Maker is a tool that allows users to create and manage Quorum
 
 ## Features at a glance
 
-Quorum Maker v2.4 is an upgrade on v1.0 released by Synechron in October 2017. This upgrade, and future expected upgrades, aim to support application developers in the pursuit of production readiness for the growing number of applications built on top of the Quorum platform.
+Quorum Maker v2.6 is an upgrade on v1.0 released by Synechron in October 2017. This upgrade, and future expected upgrades, aim to support application developers in the pursuit of production readiness for the growing number of applications built on top of the Quorum platform.
 
-| Features | V 1.0 | V 2.4 |
+| Features | V 1.0 | V 2.6 |
 | ------ | ------ |-----|
 | Create Network | ![Yes](img/tick.png "Available") | ![Yes](img/tick.png "Available") |
 |Join Network | ![No](img/cross.png "Not Available")  | ![Yes](img/tick.png "Available")|
@@ -32,6 +32,7 @@ Quorum Maker v2.4 is an upgrade on v1.0 released by Synechron in October 2017. T
 |Quorum Chain Consensus	 	  | ![Yes](img/tick.png "Available") | ![No](img/cross.png "Not Available") |
 |Raft Consensus	 	  | ![Yes](img/tick.png "Available") | ![Yes](img/tick.png "Available") |
 |Istanbul PBFT Consensus	 	  | ![No](img/cross.png "Not Available") | ![WIP](img/wip.png "Work In Progress") |
+|Tessera Support 	  | ![No](img/cross.png "Not Available") | ![Yes](img/tick.png "Available") |
 |Network Map Service  	 	  | ![No](img/cross.png "Not Available") | ![Yes](img/tick.png "Available") |
 |Node Monitoring	 	  | ![No](img/cross.png "Not Available") | ![Yes](img/tick.png "Available") |
 |Web UI	 	  | ![No](img/cross.png "Not Available") | ![Yes](img/tick.png "Available") |
@@ -67,6 +68,7 @@ Quorum Maker v2.4 is an upgrade on v1.0 released by Synechron in October 2017. T
    * [Join Node](#join-node)   
    * [Attach Node](#attach-node)   
    * [Create Dev/Test Network](#create-devtest-network)   
+1. [Tessera Support](#tessera-support)
 1. [Quorum Maker Web UI](#quorum-maker-web-ui)
    * [Node Explorer](#node-explorer)
    * [Blockchain Explorer](#blockchain-explorer)
@@ -92,7 +94,7 @@ Quorum Maker v2.4 is an upgrade on v1.0 released by Synechron in October 2017. T
 The first step to use Quorum Maker is to clone the source code from GitHub.
 
 ```bash
-$ git clone git@github.com:synechron-finlabs/quorum-maker.git 
+$ git clone https://github.com/synechron-finlabs/quorum-maker 
 ```
 
 Once the repository is successfully cloned, change to the Quorum Maker directory by `$ cd quorum-maker` and run `$ ./setup.sh` script. To minimize the pre-requisites and make setup easy, Quorum Maker uses docker and rest of the dependencies are baked to `syneblock/quorum-maker` image.
@@ -249,6 +251,32 @@ Active Attachment allows you to migrate your existing nodes that was not created
 
 If you do not wish Quorum Maker to deploy a public contract but still want to use some of the features of Quorum Maker, you can attach in **Passive** mode. Most of the features except **Node Explorer** work as expected in this mode.
 
+### Tessera Support
+
+Quorum Maker has added support for Tessera from V2.6. The nodes are by default created with Constellation, but a migration utility is autocreated according the node configuration. After creating the node, please open a terminal to the Docker node, and run the `migrate_to_tessera.sh` script.
+
+Eg.
+
+```
+quourm-maker $ ./setup.sh dev -p TestNetwork -n 2
+
+quourm-maker $ cd TestNetwork
+
+TestNetwork $ docker-compose up -d
+
+TestNetwork $ docker exec -it node1 bash
+
+root # ./migrate_to_tessera.sh
+
+```
+
+After migrating other nodes, restart the nodes. 
+
+Currently Quorum Maker migrates Constellation data to H2 database. This database can be found in the qdata directory. We are working to add support for more databases and configurations through Quorum Maker UI in the future releases.
+
+> Note: Tessera is supported on standalone nodes as well.
+
+
 ### Configure Log paths and Genesis
 
 You can point to the location of your existing node's Geth and Constellation log directories and Quorum Maker can make them accessible through it's UI. When you access the UI after attaching to an exisisting Quorum node, a notification icon appears on the top right corner. Click on this to open up the window to enter the location of the log directory. 
@@ -285,11 +313,12 @@ For create command:
   --raft                  Raft port of this node
   --nm                    Node Manager port of this node
   --ws                    Web Socket port of this node
+  -d                      Start in detached mode (Optional)
 ```
 
 E.g. 
 
-`./setup.sh create -n master --ip 10.0.2.15 -r 22000 -w 22001 -c 22002 --raft 22003 --nm 22004 --ws 22005` 
+`./setup.sh create -n master --ip 10.0.2.15 -r 22000 -w 22001 -c 22002 --raft 22003 --nm 22004 --ws 22005 -d` 
 
 OR 
 
@@ -312,11 +341,12 @@ For join command:
   --raft                  Raft port of this node
   --nm                    Node Manager port of this node
   --ws                    Web Socket port of this node
+  -d                      Start in detached mode (Optional)
 ```
 
 E.g.
 
-`./setup.sh join -n slave1 --oip 10.0.2.15 --onm 22004 --tip 10.0.2.15 -r 23000 -w 23001 -c 23002 --raft 23003 --nm 23004 --ws 23005`
+`./setup.sh join -n slave1 --oip 10.0.2.15 --onm 22004 --tip 10.0.2.15 -r 23000 -w 23001 -c 23002 --raft 23003 --nm 23004 --ws 23005 -d`
 
 OR 
 
@@ -338,11 +368,12 @@ For attach command:
   --nm                    Node Manager port of this node (New Node Manager will be created by this command)
   --active                Active attachment mode
   --passive               Passive attachment mode
+  -d                      Start in detached mode (Optional)
 ```
 
 E.g.
 
-`./setup.sh attach -n node1 --ip 10.0.2.15 --pk BULeR8JyUWhiuuCMU/HLA0Q5pzkYT+cHII3ZKBey3Bo= -r 22000 --whisper 21000 --c 9001 --raft 50401 --nm 11004 --active`
+`./setup.sh attach -n node1 --ip 10.0.2.15 --pk BULeR8JyUWhiuuCMU/HLA0Q5pzkYT+cHII3ZKBey3Bo= -r 22000 --whisper 21000 --c 9001 --raft 50401 --nm 11004 --active -d`
 
 OR
 
@@ -552,6 +583,24 @@ We expect the following areas to be part of future upgrades:
 ## FAQ
 
 ## Change Log
+
+Change log V2.6
+1. Added Tessera support for Dev/Test network creation
+1. Added Tessera support for multi-machine setup
+1. Fixed port issue with constellation configuration
+
+Change log V2.5.2
+1. Quorum version changed to V2.2.0
+1. Added detach mode for non-interactive setup
+1. Print Project details in table for Dev/Test network
+1. Fix for WS support
+1. QM banner and version information on startup
+
+Change log V2.5.1
+1. Quorum version changed to V2.1.1 
+
+Change log V2.5
+1. Quorum version changed to V2.1.0 
 
 Change log V2.4
 1. Added command line flags for running Quorum Maker non-interactively 
